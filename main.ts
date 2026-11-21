@@ -13,10 +13,19 @@ const TEXT =
 const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
 
 // Gate: the entry must be 1-280 Unicode code points and not only whitespace.
-const codePoints = [...TEXT].length;
-if (codePoints < 1 || codePoints > 280 || TEXT.trim() === "") {
-  throw new Error(`entry text is ${codePoints} code points; must be 1-280 and non-blank`);
+// Counted as code points ([...TEXT]), not UTF-16 code units, per the rules.
+function assertValidEntry(text: string): number {
+  const codePoints = [...text].length;
+  if (codePoints < 1 || codePoints > 280 || text.trim() === "") {
+    throw new Error(`entry text is ${codePoints} code points; must be 1-280 and non-blank`);
+  }
+  return codePoints;
 }
 
+const codePoints = assertValidEntry(TEXT);
+
+// Output: the grader reads /output/entry.txt (or $MAKEFUN_OUTPUT_DIR when set).
+// Create the directory first, tolerating a pre-existing path, then write
+// the entry as UTF-8. The written text is byte-identical to TEXT above.
 mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, "entry.txt"), TEXT, "utf8");
+writeFileSync(join(outDir, "entry.txt"), TEXT, { encoding: "utf8", flag: "w" });
